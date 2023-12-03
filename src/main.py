@@ -1,25 +1,26 @@
 import asyncio
 import logging
 import os
-from aiogram import Bot, Dispatcher, F, Router, types
-from aiogram.enums import ParseMode
-from aiogram.filters import Command, CommandStart
-from aiogram.fsm.context import FSMContext
-from aiogram.fsm.state import StatesGroup, State
-from aiogram.utils.keyboard import InlineKeyboardBuilder
-from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
-from aiohttp import web
 from datetime import datetime
-from dotenv import load_dotenv
-from io import BytesIO
-import pandas as pd
 from pathlib import Path
 
+import pandas as pd
+from aiogram import Bot, Dispatcher, F, Router, types
+from aiogram.filters import Command
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import State, StatesGroup
+from aiogram.utils.keyboard import InlineKeyboardBuilder
+from aiogram.webhook.aiohttp_server import (SimpleRequestHandler,
+                                            setup_application)
+from aiohttp import web
+from dotenv import load_dotenv
+
 import constants
-from src.db import create_link
+from db import create_link, parse_links
 
 load_dotenv()
 router = Router()
+logging.basicConfig(level=logging.INFO)
 
 TOKEN = os.getenv("TOKEN")
 BASE_DIR = Path(__file__).parent
@@ -38,18 +39,27 @@ class UploadFile(StatesGroup):
 
 @router.message(Command("start"))
 async def start_command(message: types.Message, state: FSMContext):
+    """
+    Стартовый хендлер, выводит кнопки по команде СТАРТ.
+    """
     try:
         await message.bot.delete_message(message.chat.id, message.message_id)
     except Exception as e:
-        pass
+        logging.ERROR(f"Ошибка {e}")
     builder = InlineKeyboardBuilder()
     builder.row(types.InlineKeyboardButton(
         text="Загрузить файл",
         callback_data=constants.UPLOAD_FILE
         )
     )
+    builder.row(
+        types.InlineKeyboardButton(
+            text="Посмотреть среднюю цену товара по сайтам",
+            callback_data=constants.AVERAGE_PRICE
+        )
+    )
     await message.answer(
-        "Нажмите на кнопку для загрузки файла",
+        "Выберите действие 👇🏻",
         reply_markup=builder.as_markup()
     )
     await state.set_state(UploadFile.waiting_for_file)
@@ -57,19 +67,36 @@ async def start_command(message: types.Message, state: FSMContext):
 
 @router.callback_query(F.data == constants.UPLOAD_FILE, UploadFile.waiting_for_file)
 async def upload_file(callback: types.CallbackQuery, state: FSMContext):
-    await callback.message.answer("Отправьте пожалуйста файл с данными")
+    """
+    Хендлер для запроса файла.
+    """
+    await callback.message.answer("Отправьте пожалуйста файл с данными.")
     await state.set_state(UploadFile.processing_file)
+    await callback.answer()
+
+
+@router.callback_query(F.data == constants.AVERAGE_PRICE)
+async def average_price(callback: types.CallbackQuery):
+    """
+    Хендлер для вывода средней цены зюзюблика по сайтам.
+    """
+    await callback.message.answer("Вычисляем цену.....")
+    sites_price = parse_links()
+    for site, price in sites_price.items():
+        await callback.message.answer(f"Средняя цена зюзюблика для сайта {site} составляет {price}")
     await callback.answer()
 
 
 @router.message(F.document, UploadFile.processing_file)
 async def processing_file(message: types.Message, state: FSMContext):
-    await message.answer("Обрабатываем файл")
+    """
+    Хендлер обработки входящего файла.
+    """
+    await message.answer("Обрабатываем файл...")
     if not message.document.file_name.endswith(".xlsx"):
-        await message.answer("Отправлен не excel файл, отправьте правильный документ")
+        await message.answer("Отправлен не excel файл, отправьте правильный документ!")
     else:
-        document = message.document
-        file = await message.bot.download(document)
+        file = await message.bot.download(message.document)
         try:
             directory = BASE_DIR / 'document'
             os.makedirs(directory, exist_ok=True)
@@ -78,7 +105,8 @@ async def processing_file(message: types.Message, state: FSMContext):
             with open(filepath, 'wb') as f:
                 f.write(file.getvalue())
         except Exception as e:
-            await message.answer(f"Произошла ошибка при сохранении файла: {str(e)}")
+            logging.ERROR(e)
+            await message.answer(f"Произошла ошибка при сохранении файла: {e}")
         df = pd.read_excel(file)
         rows, cols = df.shape
         for i in range(rows):
@@ -91,7 +119,6 @@ async def processing_file(message: types.Message, state: FSMContext):
                     f"\nОни успешно добавлены в базу данных")
             else:
                 await message.answer(f"Вы предоставили некорректные данные. Исправьте их и попробуйте еще раз!")
-
         await state.clear()
 
 
@@ -99,6 +126,7 @@ async def main():
     bot = Bot(TOKEN, parse_mode="HTML")
     dp = Dispatcher()
     dp.include_router(router)
+    logging.info("Starting bot")
     await dp.start_polling(bot, drop_pending_updates=True)
 
 
@@ -110,12 +138,10 @@ async def main():
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-
     try:
         asyncio.run(main())
-    except KeyboardInterrupt:
-        print("Бот остановлен по команде Ctrl+C")
+    except (KeyboardInterrupt, SystemExit):
+        logging.error("Bot stopped!")
 
     # dp = Dispatcher()
     # dp.include_router(router)
