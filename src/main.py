@@ -45,7 +45,7 @@ async def start_command(message: types.Message, state: FSMContext):
     try:
         await message.bot.delete_message(message.chat.id, message.message_id)
     except Exception as e:
-        logging.ERROR(f"Ошибка {e}")
+        logging.error(f"Ошибка {e}")
     builder = InlineKeyboardBuilder()
     builder.row(types.InlineKeyboardButton(
         text="Загрузить файл",
@@ -105,7 +105,7 @@ async def processing_file(message: types.Message, state: FSMContext):
             with open(filepath, 'wb') as f:
                 f.write(file.getvalue())
         except Exception as e:
-            logging.ERROR(e)
+            logging.error(e)
             await message.answer(f"Произошла ошибка при сохранении файла: {e}")
         df = pd.read_excel(file)
         rows, cols = df.shape

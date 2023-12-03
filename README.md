@@ -44,9 +44,20 @@ https://github.com/desm80/testBotPandas.git
 
 Его можно получить у бота https://t.me/BotFather
 
-запустить бота в Docker
+Активировать виртуальное окружение и установить зависимости
 ```angular2html
-sudo docker-compose up -d
+poetry env use python3.11
+poetry shell
+poetry install
+```
+
+Перейти в папку src
+```
+cd src
+```
+запустить бота
+```angular2html
+python3 main.py
 ```
 
 

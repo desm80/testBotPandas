@@ -383,6 +383,16 @@ files = [
 ]
 
 [[package]]
+name = "chromedriver-binary"
+version = "121.0.6156.2.0"
+description = "Installer for chromedriver."
+optional = false
+python-versions = "*"
+files = [
+    {file = "chromedriver-binary-121.0.6156.2.0.tar.gz", hash = "sha256:d892ace7f17830199f604e90bd3f26d314bd325f5cf3db9a6fc490665df229e4"},
+]
+
+[[package]]
 name = "et-xmlfile"
 version = "1.1.0"
 description = "An implementation of lxml.xmlfile for the standard library"
@@ -1493,4 +1503,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "3cbf6a7824042918ee1ed7e906936f69bd9ffcc51f7d8ecd7974e5298c8404d7"
+content-hash = "2d4eb2a1b642f494d05068b15f83d556556db6eddde157ffd11d1e0336aec160"

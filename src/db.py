@@ -1,12 +1,16 @@
 import logging
 import re
+import time
 from typing import List
 from urllib.parse import urlparse
 
 from lxml import etree
 from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from sqlalchemy import Column, Integer, String, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -66,19 +70,29 @@ def create_link(data: List) -> bool:
         return True
     except Exception as e:
         session.rollback()
-        logging.ERROR(e)
+        logging.error(e)
         return False
 
 
 def parse_links():
     site_prices = {}
     links = session.query(Link).all()
+
     service = Service(executable_path=ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=service)
+    chrome_options = Options()
+    # chrome_options.add_argument("--headless")
+    # chrome_options.add_argument("--no-sandbox")
+    # chrome_options.add_argument("--disable-gpu")
+    # chrome_options.add_argument("--disable-dev-shm-usage")
+
+    time.sleep(2)
+    driver = webdriver.Chrome(service=service, options=chrome_options)
     for link in links:
         driver.get(link.url)
         try:
-            price_element = driver.find_element(By.XPATH, link.xpath)
+            price_element = WebDriverWait(driver, 5).until(
+                EC.presence_of_element_located((By.XPATH, link.xpath))
+            )
             if price_element:
                 raw_price = price_element.text.strip()
                 cleaned_price = float((re.sub(r'[^\d.,]', '', raw_price).replace(",", ".")))
@@ -88,9 +102,9 @@ def parse_links():
                 site_prices[site_key]['total_price'] += cleaned_price
                 site_prices[site_key]['count'] += 1
             else:
-                logging.ERROR(f'Ошибка парсинга цены по ссылке {link.url}')
+                logging.error(f'Ошибка парсинга цены по ссылке {link.url}')
         except Exception as e:
-            logging.ERROR(f'Ошибка парсинга цены по ссылке {link.url}: {e}')
+            logging.error(f'Ошибка парсинга цены по ссылке {link.url}: {e}')
         driver.quit()
         average_prices = {}
         for site_key, data in site_prices.items():
