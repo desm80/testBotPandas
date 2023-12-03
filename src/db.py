@@ -37,7 +37,10 @@ class Link(Base):
         return f"{self.title} - {self.url}"
 
 
-def validate_url(url):
+def validate_url(url) -> bool:
+    """
+    Валидация ссылок.
+    """
     try:
         result = urlparse(url)
         return all([result.scheme, result.netloc])
@@ -45,7 +48,10 @@ def validate_url(url):
         return False
 
 
-def validate_xpath(xpath):
+def validate_xpath(xpath) -> bool:
+    """
+    Валидация локаторов XPATH.
+    """
     try:
         etree.XPath(xpath)
         return True
@@ -54,6 +60,9 @@ def validate_xpath(xpath):
 
 
 def create_link(data: List) -> bool:
+    """
+    Функция создания и сохранения в БД объектов Link.
+    """
     if not validate_url(data[1]):
         return False
     if not validate_xpath(data[2]):
@@ -75,6 +84,13 @@ def create_link(data: List) -> bool:
 
 
 def parse_links():
+    """
+    Функция парсинга ссылок и получения цен по локаторам.
+    :return: {
+    site: string
+    average price: float
+    }
+    """
     site_prices = {}
     links = session.query(Link).all()
 

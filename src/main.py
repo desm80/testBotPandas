@@ -33,6 +33,9 @@ BASE_WEBHOOK_URL = "https://aiogram.dev/"
 
 
 class UploadFile(StatesGroup):
+    """
+    Этапы FSM для загрузки файла с данными.
+    """
     waiting_for_file = State()
     processing_file = State()
 
