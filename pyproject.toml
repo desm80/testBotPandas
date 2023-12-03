@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "telegrambotpandas"
+version = "0.1.0"
+description = ""
+authors = ["desm80 <desm80@yandex.ru>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+aiogram = "^3.2.0"
+pandas = "^2.1.3"
+sqlalchemy = "1.4.50"
+python-dotenv = "^1.0.0"
+openpyxl = "^3.1.2"
+lxml = "^4.9.3"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
