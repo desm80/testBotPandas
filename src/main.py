@@ -1,10 +1,9 @@
 import asyncio
 import logging
+import pandas as pd
 import os
 from datetime import datetime
 from pathlib import Path
-
-import pandas as pd
 from aiogram import Bot, Dispatcher, F, Router, types
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext

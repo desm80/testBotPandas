@@ -1,9 +1,6 @@
 import logging
 import re
 import time
-from typing import List
-from urllib.parse import urlparse
-
 from lxml import etree
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -14,7 +11,10 @@ from selenium.webdriver.support import expected_conditions as EC
 from sqlalchemy import Column, Integer, String, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from typing import List
+from urllib.parse import urlparse
 from webdriver_manager.chrome import ChromeDriverManager
+
 
 DATABASE_URL = "sqlite:///links.db"
 engine = create_engine(DATABASE_URL, echo=True)
